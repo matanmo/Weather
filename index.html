@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Weather app</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20,400,0,0" />
+</head>
+<body>
+  <!-- Logo in top left corner -->
+  <div class="logo"></div>
+
+  <!-- Weather content -->
+  <div class="weather-data">
+    <div class="today">
+      <div class="day-title">
+        Today
+      </div>
+      <h1 class="pfi-value">--°</h1>
+      <h1 class="comparison">Loading...<br>&nbsp;</h1>
+      <!-- Precipitation indication for today -->
+      <div class="precipitation-today" style="display: none;">
+        <span class="precipitation-icon"></span>
+        <span class="precipitation-label"></span>
+      </div>
+      <!-- Hazard warning for today -->
+      <div class="hazard-today" style="display: none;">
+        <span class="hazard-icon"></span>
+        <span class="hazard-label"></span>
+      </div>
+    </div>
+    <div class="week-days">
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+      <div class="day-item">
+        <div class="day-name">-</div>
+        <div class="day-pfi">--°</div>
+        <!-- Precipitation icon for week view -->
+        <div class="precipitation-week" style="display: none;">
+          <span class="precipitation-icon"></span>
+        </div>
+        <!-- Hazard icon for week view -->
+        <div class="hazard-week" style="display: none;">
+          <span class="hazard-icon"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  
+  <!-- Error message -->
+  <div id="error" class="error" style="display: none;"></div>
+  
+  <!-- Retry button -->
+  <div id="retry" class="retry" style="display: none;">
+    <button onclick="retryApp()">Retry</button>
+  </div>
+
+  <!-- JavaScript for weather logic -->
+  <script src="mockConfig.js?v=2"></script>
+  <script src="script.js?v=2"></script>
+</body>
+</html>
