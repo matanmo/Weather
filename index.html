@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="favicon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Weather app" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20,400,0,0" />
 </head>
@@ -126,5 +126,15 @@
   <!-- JavaScript for weather logic -->
   <script src="mockConfig.js?v=3"></script>
   <script src="script.js?v=3"></script>
+  
+  <!-- Detect if running as shortcut and apply appropriate styling -->
+  <script>
+    // Check if running as a shortcut (standalone mode)
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+      document.body.classList.add('shortcut-mode');
+    } else {
+      document.body.classList.add('browser-mode');
+    }
+  </script>
 </body>
 </html>
