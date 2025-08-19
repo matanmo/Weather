@@ -2,11 +2,11 @@
 // Toggle this to switch between real API and mock data
 
 // 🔧 TESTING_MODE: true = use mock data, false = real API
-window.TESTING_MODE = true;
+window.TESTING_MODE = false;
 
 // Force mock mode to be true (in case of any issues)
 if (typeof window !== 'undefined') {
-  window.TESTING_MODE = true;
+  window.TESTING_MODE = false;
   console.log('🔧 FORCED: Mock mode is now TRUE');
 }
 
