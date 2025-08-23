@@ -22,7 +22,7 @@
   <div class="header">
     <div class="logo"></div>
     <div class="search-container">
-      <input id="search-input" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text" />
+      <input id="search-input" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text" enterkeyhint="search" />
       <button class="search-dismiss">
         <span class="material-symbols-sharp">close</span>
       </button>  
@@ -138,14 +138,27 @@
   </div>
 
   <!-- JavaScript for weather logic -->
-  <script src="mockConfig.js?v=4"></script>
-  <script src="script.js?v=4"></script>
+  <script src="mockConfig.js?v=5"></script>
+  <script src="script.js?v=5"></script>
   
   <!-- Detect if running as shortcut and apply appropriate styling -->
   <script>
     // Check if running as a shortcut (standalone mode)
     if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
       document.body.classList.add('shortcut-mode');
+      
+      // Simple fix: Force keyboard to appear in standalone mode
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        // iOS standalone mode: Force keyboard on touch
+        searchInput.addEventListener('touchstart', function(e) {
+          // Force focus and keyboard
+          this.focus();
+          this.click();
+        });
+        
+        console.log('iOS standalone mode detected - search input enhanced');
+      }
     } else {
       document.body.classList.add('browser-mode');
     }
