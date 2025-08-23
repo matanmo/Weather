@@ -6,16 +6,20 @@ html {
 /* Color variables */
 :root {
   --primary: #1F1F21;
-  --negative: #1F1F21;
+  --secondary: rgba(31, 31, 33, 0.5);
   --background: #FFFFFF;
+  --surface: rgba(31, 31, 33, 0.05);
+  --surface-active: rgba(31, 31, 33, 0.25);
 }
 
 /* Dark mode - automatically follows device preference */
 @media (prefers-color-scheme: dark) {
   :root {
     --primary: #FFFFFF;
-    --negative: #FFFFFF;
+    --secondary: rgba(255, 255, 255, 0.5);
     --background: #000000;
+    --surface: rgba(255, 255, 255, 0.1);
+    --surface-active: rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -48,33 +52,176 @@ body {
   -webkit-overflow-scrolling: touch;
   /* Fixed positioning for iOS */
   position: fixed;
+  width: 100vw;
+  width: 100dvw;
+}
+
+/* Prevent body scrolling when search results are shown */
+body.search-active {
+  overflow: hidden !important; /* Force override */
+}
+
+.header {
+  padding: 32px 32px 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
 }
 
 /* Logo positioning in top left corner */
 .logo {
-  position: absolute;
   /* Safe area already handled by body padding */
-  top: 32px;
-  left: 32px;
-  z-index: 10;
-  height: 32px;
-  width: 32px;
+  height: 40px;
+  width: 40px;
   background-image: url("logo.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  flex-shrink: 0;
 }
 
-/* Adjust logo position based on how the app is opened */
+/* Adjust logo position based on how the app is opened
 .browser-mode .logo {
   top: 32px;
-}
+} */
 
 .shortcut-mode .logo {
   /* Add extra space for status bar in shortcut mode */
-  top: 96px;
+  /* top: 96px; */
 }
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  justify-content: flex-end;
+  position: relative; /* For absolute positioning of search results */
+  z-index: 15; /* Ensure search container is above weather data */
+}
+
+.header input {
+  border-radius: 24px;
+  padding: 14px 16px;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  outline: none;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none; /* For Webkit browsers */
+  -moz-appearance: none; /* For Firefox */
+  -webkit-tap-highlight-color: transparent;
+  background: var(--surface);
+  transition: all 0.3s ease-out;
+  width: fit-content; /* Fit content width */
+  max-width: 200px; /* Max width limit */
+  text-overflow: ellipsis;
+}
+
+/* Focus state - expand to full width */
+.header input:focus {
+  border-radius: 24px 10px 10px 24px;
+  width: 100% !important; /* Force full width and override inline styles */
+  transition: all 0.6s ease-out;
+}
+
+.header input::placeholder {
+  color: var(--secondary);
+}
+
+.header input:active {
+  background: var(--surface-active);
+  padding: 14px 20px;
+}
+
+.header input:focus {
+  border-radius: 24px 10px 10px 24px;
+  width: 100%;
+  transition: all 0.6s ease-out;
+}
+
+.search-dismiss {
+  background: var(--surface);
+  border: none;
+  border-radius: 10px 24px 24px 10px;
+  color: var(--primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0; /* Start transparent */
+  transform: scaleX(0) scaleY(0); /* Start scaled down horizontally */
+  width: 0; /* Start with no width */
+  padding: 0; /* Start with no padding */
+  overflow: hidden; /* Hide overflow content */
+  transition: all 0.25s ease-out; /* Smooth transitions */
+}
+
+/* Show dismiss button when search is focused */
+.search-dismiss.search-visible {
+  opacity: 1; /* Fully visible */
+  transform: scaleX(1) scaleY(1); /* Full scale */
+  width: auto; /* Normal width */
+  padding: 12px 14px;
+}
+
+.search-dismiss:active {
+  background: var(--surface-active);
+  padding: 12px 20px;
+  border-radius: 24px;
+}
+
+.search-results {
+  padding: 16px 32px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  z-index: 100; /* High z-index to ensure visibility */
+  background: var(--background); /* Match page background */
+  border-radius: 12px; /* Rounded corners */
+  margin-top: 8px; /* Small gap from search bar */
+  /* Fixed height to prevent page scrolling */
+  height: 400px; /* Fixed height that won't cause page scroll */
+  overflow-y: auto; /* Allow scrolling within results */
+  /* Hidden by default */
+  display: none;
+}
+
+/* Show search results when they have content */
+.search-results.has-results {
+  display: flex;
+}
+
+.search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  padding: 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease-out;
+}
+
+.search-result:active {
+  background: var(--surface-active);
+  border-radius: 24px;
+  padding: 16px 20px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 .today {
   margin-bottom: 64px;
@@ -94,6 +241,15 @@ body {
   max-height: calc(100vh - 120px);
   max-height: calc(100dvh - 120px);
   overflow: hidden;
+  /* Transition for search focus effect */
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Weather data hidden state when search is focused */
+.weather-data.search-hidden {
+  opacity: 0;
+  pointer-events: none; /* Prevent blocking touch events when hidden */
 }
 
 /* Adjust weather data position based on how the app is opened */
@@ -154,7 +310,7 @@ h1 {
 
 .error {
   text-align: center;
-  color: var(--negative);
+  color: var(--primary);
   margin-top: 20px;
 }
 
@@ -241,14 +397,14 @@ h1 {
 
 .hazard-icon .material-symbols-sharp {
   font-size: 20px;
-  color: var(--negative);
+  color: var(--primary);
 }
 
 .hazard-label {
   font-size: 16px;
   line-height: 20px;
   font-weight: 500;
-  color: var(--negative);
+  color: var(--primary);
 }
 
 /* Dark mode logo override - placed at end so it has priority */

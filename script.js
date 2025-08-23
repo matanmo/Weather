@@ -3,6 +3,7 @@
 
 // Location will be detected automatically from IP
 let LOCATION = null;
+let isWeatherAppRunning = false; // Prevent multiple simultaneous weather app calls
 
 // Check if running on mobile
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -10,6 +11,403 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 // DOM elements
 const weatherData = document.querySelector('.weather-data');
 const error = document.getElementById('error');
+
+// ---- LOCATION SEARCH FUNCTIONALITY ----
+let currentLocationName = "Tel Aviv, Israel"; // default location name with country
+let ipBasedLocationName = "Tel Aviv, Israel"; // IP-based location name (never changes)
+let fuse; // Fuse.js instance for fuzzy searching
+
+// Load saved location from localStorage on startup
+function loadSavedLocation() {
+  const savedLocation = localStorage.getItem('weatherAppLocation');
+  if (savedLocation) {
+    try {
+      const locationData = JSON.parse(savedLocation);
+      currentLocationName = locationData.name;
+      LOCATION = {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      };
+      console.log('Loaded saved location:', currentLocationName);
+      return true; // Indicates we have a saved location
+    } catch (err) {
+      console.error('Error parsing saved location:', err);
+      localStorage.removeItem('weatherAppLocation'); // Clear corrupted data
+    }
+  }
+  return false; // No saved location
+}
+
+// Save location to localStorage
+function saveLocation(name, latitude, longitude) {
+  const locationData = {
+    name: name,
+    latitude: latitude,
+    longitude: longitude
+  };
+  localStorage.setItem('weatherAppLocation', JSON.stringify(locationData));
+  console.log('Saved location to localStorage:', locationData);
+}
+
+// Get search elements
+const searchInput = document.getElementById('search-input');
+const searchResults = document.querySelector('.search-results');
+const dismissBtn = document.querySelector('.search-dismiss');
+
+// Validate that all elements were found
+console.log('Search elements found:', {
+  searchInput: searchInput,
+  searchResults: searchResults,
+  dismissBtn: dismissBtn
+});
+
+if (!searchInput || !searchResults || !dismissBtn) {
+  console.error('Some search elements not found!');
+  // Don't return - just log the error and continue
+}
+
+// Setup Fuse.js for fuzzy searching with typo tolerance
+function setupFuse(data) {
+  fuse = new Fuse(data, {
+    keys: ["name", "country", "admin1"],
+    threshold: 0.4, // controls typo tolerance (lower = more strict)
+    includeScore: true
+  });
+}
+
+// Fetch locations from Open-Meteo Geocoding API
+async function fetchLocations(query) {
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`;
+    console.log('Fetching from URL:', url); // Debug log
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    console.log('API response:', data); // Debug log
+    
+    if (data.results && data.results.length > 0) {
+      setupFuse(data.results);
+      return data.results;
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching locations:', err);
+    return [];
+  }
+}
+
+// Render search results in the existing container
+function renderResults(results) {
+  console.log('=== RENDERING RESULTS ==='); // Debug log
+  
+  // Clear existing results
+  searchResults.innerHTML = "";
+  console.log('Cleared previous results'); // Debug log
+  
+  // Always add current location result at the top (based on IP, not last selection)
+  const currentLocationResult = document.createElement("div");
+  currentLocationResult.classList.add("search-result");
+  currentLocationResult.textContent = ipBasedLocationName;
+  
+  // Handle current location selection
+  currentLocationResult.onclick = function() {
+    console.log('=== CURRENT LOCATION CLICKED ==='); // Debug log
+    console.log('Returning to IP-based location:', ipBasedLocationName); // Debug log
+    
+    // Update search input to show IP-based location name
+    searchInput.value = ipBasedLocationName;
+    // Update the stored previous value for future focus/blur cycles
+    searchInput.dataset.previousValue = ipBasedLocationName;
+    console.log('Search input now shows:', ipBasedLocationName); // Debug log
+    
+    // Clear results
+    searchResults.innerHTML = "";
+    searchResults.classList.remove('has-results'); // Hide container
+    
+    // Resize input to fit new content
+    resizeSearchInput();
+    
+    // Show weather data
+    weatherData.classList.remove('search-hidden');
+    
+    // Hide dismiss button since search is no longer focused
+    dismissBtn.classList.remove('search-visible');
+    
+    // Clear saved location from localStorage since we're returning to IP location
+    localStorage.removeItem('weatherAppLocation');
+    console.log('Cleared saved location from localStorage');
+    
+    // Reset LOCATION to force fresh IP detection
+    LOCATION = null;
+    
+    // Refresh weather for current location
+    console.log('Refreshing weather for current location...'); // Debug log
+    initWeatherApp();
+  };
+  
+  searchResults.appendChild(currentLocationResult);
+  console.log('Current location result added'); // Debug log
+  
+  if (results.length === 0) {
+    console.log('No additional results to render'); // Debug log
+    searchResults.classList.add('has-results'); // Show container for current location result
+    return;
+  }
+  
+  console.log('Creating', results.length, 'additional result items'); // Debug log
+  
+  // Create and append each result
+  results.forEach((place, index) => {
+    console.log(`Creating result ${index}:`, place.name); // Debug log
+    
+    const resultItem = document.createElement("div");
+    resultItem.classList.add("search-result");
+    resultItem.textContent = `${place.name}, ${place.country}`;
+    
+    // Simple click handler
+    resultItem.onclick = function() {
+      console.log('=== CLICKED RESULT ==='); // Debug log
+      console.log('Selected:', place.name); // Debug log
+      console.log('Place data:', place); // Debug log
+      
+      // Update location with full name (city + country)
+      currentLocationName = `${place.name}, ${place.country}`;
+      LOCATION = {
+        latitude: place.latitude,
+        longitude: place.longitude
+      };
+      
+      // Save the selected location to localStorage
+      saveLocation(currentLocationName, place.latitude, place.longitude);
+      
+      console.log('Updated currentLocationName:', currentLocationName); // Debug log
+      console.log('Updated LOCATION:', LOCATION); // Debug log
+      
+      // Update search input to show selected location
+      searchInput.value = currentLocationName;
+      // Update the stored previous value for future focus/blur cycles
+      searchInput.dataset.previousValue = currentLocationName;
+      console.log('Search input now shows:', searchInput.value); // Debug log
+      
+      // Clear results
+      searchResults.innerHTML = "";
+      searchResults.classList.remove('has-results'); // Hide container
+      
+      // Resize input to fit new content
+      resizeSearchInput();
+      
+      // Show weather data
+      weatherData.classList.remove('search-hidden');
+      
+      // Hide dismiss button since search is no longer focused
+      dismissBtn.classList.remove('search-visible');
+      
+      // Refresh weather for new location
+      console.log('About to call initWeatherApp()...'); // Debug log
+      console.log('Current LOCATION before call:', LOCATION); // Debug log
+      console.log('Current currentLocationName before call:', currentLocationName); // Debug log
+      
+      initWeatherApp();
+      
+      console.log('initWeatherApp() called'); // Debug log
+    };
+    
+    // Add to DOM
+    searchResults.appendChild(resultItem);
+    console.log(`Result ${index} added`); // Debug log
+  });
+  
+  console.log('All results rendered, total in DOM:', searchResults.children.length); // Debug log
+}
+
+// Debounce function to avoid excessive API calls
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Handle search input with debouncing
+const debouncedSearch = debounce(async (query) => {
+  console.log('=== SEARCH TRIGGERED ==='); // Debug log
+  console.log('Query:', query); // Debug log
+  
+  if (!query.trim()) {
+    console.log('Empty query, clearing results'); // Debug log
+    searchResults.innerHTML = "";
+    return;
+  }
+  
+  console.log('Fetching locations...'); // Debug log
+  const locations = await fetchLocations(query);
+  console.log('API returned:', locations.length, 'locations'); // Debug log
+  
+  let results = locations;
+  
+  // Use Fuse.js for fuzzy searching if available
+  if (fuse && locations.length > 0) {
+    const fuzzyResults = fuse.search(query);
+    if (fuzzyResults.length > 0) {
+      results = fuzzyResults.map(r => r.item);
+    }
+  }
+  
+  console.log('Rendering', results.length, 'results'); // Debug log
+  renderResults(results);
+}, 300);
+
+// Search input event listeners
+searchInput.addEventListener('input', (e) => {
+  console.log('=== SEARCH INPUT EVENT ==='); // Debug log
+  console.log('Search input value:', e.target.value); // Debug log
+  const query = e.target.value.trim();
+  console.log('Query to search:', query); // Debug log
+  debouncedSearch(query);
+});
+
+// Test if search input is working
+searchInput.addEventListener('keydown', (e) => {
+  console.log('=== KEYDOWN EVENT ==='); // Debug log
+  console.log('Key pressed:', e.key); // Debug log
+});
+
+// On focus - clear input for typing and hide weather data
+searchInput.addEventListener('focus', () => {
+  console.log('=== SEARCH FOCUSED ==='); // Debug log
+  // Store the current value before clearing
+  searchInput.dataset.previousValue = searchInput.value;
+  searchInput.value = "";
+  // Hide weather data with opacity transition
+  weatherData.classList.add('search-hidden');
+  // Show dismiss button
+  dismissBtn.classList.add('search-visible');
+  
+  // Show current location result immediately
+  showCurrentLocationResult();
+});
+
+// On blur - restore previous value and show weather data
+searchInput.addEventListener('blur', () => {
+  console.log('=== SEARCH BLURRED ==='); // Debug log
+  setTimeout(() => {
+    // Only restore if no result was clicked and input is empty
+    if (searchResults.children.length > 0 && !searchInput.value.trim()) {
+      console.log('No result clicked and input empty, restoring previous value'); // Debug log
+      searchInput.value = searchInput.dataset.previousValue || currentLocationName;
+      searchResults.innerHTML = "";
+    }
+    // Show weather data with opacity transition
+    weatherData.classList.remove('search-hidden');
+    // Hide dismiss button
+    dismissBtn.classList.remove('search-visible');
+  }, 150); // Reduced delay for faster response
+});
+
+// Dismiss button functionality
+dismissBtn.addEventListener('click', () => {
+  searchResults.innerHTML = "";
+  searchInput.blur();
+  
+  // If input is empty after dismiss, restore current location name
+  if (!searchInput.value.trim()) {
+    searchInput.value = currentLocationName;
+  }
+});
+
+
+
+// Function to resize search input to fit content
+function resizeSearchInput() {
+  if (searchInput) {
+    // Create a temporary span to measure text width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.whiteSpace = 'pre';
+    tempSpan.style.font = window.getComputedStyle(searchInput).font;
+    tempSpan.textContent = searchInput.value || currentLocationName;
+    
+    document.body.appendChild(tempSpan);
+    const textWidth = tempSpan.offsetWidth;
+    document.body.removeChild(tempSpan);
+    
+    // Add padding and some extra space
+    const totalWidth = Math.min(textWidth + 32, 200); // 32px for padding, max 200px
+    
+    // Set width without transition to avoid animation
+    searchInput.style.transition = 'none';
+    searchInput.style.width = totalWidth + 'px';
+    
+    // Force a reflow to apply the width change
+    searchInput.offsetHeight;
+    
+    // Restore transition
+    searchInput.style.transition = '';
+    
+    console.log('Resized search input to:', totalWidth, 'px for text:', searchInput.value || currentLocationName);
+  }
+}
+
+// Function to show current location result
+function showCurrentLocationResult() {
+  // Clear any existing results
+  searchResults.innerHTML = "";
+  
+  // Create current location result
+  const currentLocationResult = document.createElement("div");
+  currentLocationResult.classList.add("search-result");
+  currentLocationResult.textContent = ipBasedLocationName;
+  
+  // Handle current location selection
+  currentLocationResult.onclick = function() {
+    console.log('=== CURRENT LOCATION CLICKED ==='); // Debug log
+    console.log('Returning to IP-based location:', ipBasedLocationName); // Debug log
+    
+    // Update search input to show IP-based location name
+    searchInput.value = ipBasedLocationName;
+    // Update the stored previous value for future focus/blur cycles
+    searchInput.dataset.previousValue = ipBasedLocationName;
+    console.log('Search input now shows:', ipBasedLocationName); // Debug log
+    
+    // Clear results
+    searchResults.innerHTML = "";
+    searchResults.classList.remove('has-results'); // Hide container
+    
+    // Resize input to fit new content
+    resizeSearchInput();
+    
+    // Show weather data
+    weatherData.classList.remove('search-hidden');
+    
+    // Hide dismiss button since search is no longer focused
+    dismissBtn.classList.remove('search-visible');
+    
+    // Clear saved location from localStorage since we're returning to IP location
+    localStorage.removeItem('weatherAppLocation');
+    console.log('Cleared saved location from localStorage');
+    
+    // Reset LOCATION to force fresh IP detection
+    LOCATION = null;
+    
+    // Refresh weather for current location
+    console.log('Refreshing weather for current location...'); // Debug log
+    initWeatherApp();
+  };
+  
+  searchResults.appendChild(currentLocationResult);
+  searchResults.classList.add('has-results'); // Show container
+  console.log('Current location result shown'); // Debug log
+}
+
+// Search functionality will be initialized after DOM loads
+console.log('Search functionality setup complete, waiting for DOM...'); // Debug log
 
 // Helper function to fetch with timeout
 async function fetchWithTimeout(url, options = {}, timeout = 10000) {
@@ -171,8 +569,18 @@ function showLoadingProgress(step) {
 
 // Main function to start the weather app
 async function initWeatherApp() {
+  // Prevent multiple simultaneous calls
+  if (isWeatherAppRunning) {
+    console.log('Weather app already running, skipping...'); // Debug log
+    return;
+  }
+  
+  isWeatherAppRunning = true;
+  
   try {
     console.log('Starting weather app...'); // Debug log
+    console.log('Current LOCATION:', LOCATION); // Debug log
+    console.log('Current location name:', currentLocationName); // Debug log
     
     // 🔧 DEBUG: Check mock mode status
     console.log('🔧 DEBUG: window.TESTING_MODE =', window.TESTING_MODE);
@@ -207,10 +615,23 @@ async function initWeatherApp() {
       
     } else {
       // Real API mode - normal flow
-      // Get location from IP first
-      showLoadingProgress('Getting location...');
-      console.log('Getting location from IP...'); // Debug log
-      await getLocationFromIP();
+      // Check if we already have a location (from search selection or saved location)
+      if (LOCATION && LOCATION.latitude && LOCATION.longitude) {
+        console.log('Using existing location from search:', LOCATION); // Debug log
+        showLoadingProgress('Using selected location...');
+      } else {
+        // Check for saved location first, then IP location if none saved
+        showLoadingProgress('Getting location...');
+        console.log('Checking for saved location...'); // Debug log
+        const hasSavedLocation = loadSavedLocation();
+        
+        if (!hasSavedLocation) {
+          console.log('No saved location, getting from IP...'); // Debug log
+          await getLocationFromIP();
+        } else {
+          console.log('Using saved location:', currentLocationName); // Debug log
+        }
+      }
       
       // Fetch weather data for 7 days (today + 6 future days)
       showLoadingProgress('Fetching weather...');
@@ -244,6 +665,9 @@ async function initWeatherApp() {
       console.error('Fallback also failed:', fallbackErr);
       showError(`Failed to load weather data: ${err.message}`);
     }
+  } finally {
+    // Reset the flag when done
+    isWeatherAppRunning = false;
   }
 }
 
@@ -267,6 +691,14 @@ async function getLocationFromIP() {
       latitude: data.latitude,
       longitude: data.longitude
     };
+    
+    // Update current location name when detected from IP
+    if (data.city) {
+      const ipLocationName = `${data.city}, ${data.country}`;
+      currentLocationName = ipLocationName;
+      ipBasedLocationName = ipLocationName; // Store IP-based location separately
+      searchInput.value = currentLocationName;
+    }
     
     console.log('Location detected:', data.city, data.country);
   } catch (err) {
@@ -774,4 +1206,37 @@ function retryApp() {
 }
 
 // Start the app when the page loads
-document.addEventListener('DOMContentLoaded', initWeatherApp); 
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, starting weather app...'); // Debug log
+  console.log('Initial currentLocationName:', currentLocationName); // Debug log
+  
+  // Load saved location first, then set search input value
+  const hasSavedLocation = loadSavedLocation();
+  if (hasSavedLocation) {
+    console.log('Loaded saved location on startup:', currentLocationName);
+  }
+  
+  // Set search input value immediately
+  if (searchInput) {
+    searchInput.value = currentLocationName;
+    console.log('Search input initialized with:', currentLocationName); // Debug log
+    console.log('Search input actual value:', searchInput.value); // Debug log
+    
+    // Resize input to fit content
+    resizeSearchInput();
+  } else {
+    console.log('Search input not found yet'); // Debug log
+  }
+  
+  initWeatherApp();
+  
+  // Initialize search functionality after weather app starts
+  setTimeout(() => {
+    if (searchInput && searchResults && dismissBtn) {
+      console.log('Initializing search functionality...'); // Debug log
+      console.log('Search functionality ready!'); // Debug log
+    } else {
+      console.log('Search elements not ready, skipping search initialization'); // Debug log
+    }
+  }, 1000); // Wait 1 second for weather app to initialize
+}); 
