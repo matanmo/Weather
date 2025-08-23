@@ -1308,19 +1308,4 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Search elements not ready, skipping search initialization'); // Debug log
     }
   }, 1000); // Wait 1 second for weather app to initialize
-  
-  // Listen for standalone search events (for home screen app compatibility)
-  window.addEventListener('standaloneSearch', (event) => {
-    console.log('Standalone search triggered with query:', event.detail.query);
-    
-    // Simulate typing in the search input
-    if (searchInput) {
-      searchInput.value = event.detail.query;
-      searchInput.focus();
-      
-      // Trigger the search
-      const searchEvent = new Event('input', { bubbles: true });
-      searchInput.dispatchEvent(searchEvent);
-    }
-  });
 }); 
