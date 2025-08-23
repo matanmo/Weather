@@ -26,6 +26,10 @@
       <button class="search-dismiss">
         <span class="material-symbols-sharp">close</span>
       </button>  
+      <!-- Fallback search button for standalone mode -->
+      <button id="standalone-search-btn" class="standalone-search-btn" style="display: none;">
+        <span class="material-symbols-sharp">search</span>
+      </button>
     </div>
   </div>
 
@@ -138,16 +142,122 @@
   </div>
 
   <!-- JavaScript for weather logic -->
-  <script src="mockConfig.js?v=4"></script>
-  <script src="script.js?v=4"></script>
+  <script src="mockConfig.js?v=5"></script>
+  <script src="script.js?v=5"></script>
   
   <!-- Detect if running as shortcut and apply appropriate styling -->
   <script>
     // Check if running as a shortcut (standalone mode)
     if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
       document.body.classList.add('shortcut-mode');
+      
+      // iOS standalone mode fix: Add specific attributes for input fields
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        // Force iOS to show keyboard in standalone mode
+        searchInput.setAttribute('autocomplete', 'off');
+        searchInput.setAttribute('autocorrect', 'off');
+        searchInput.setAttribute('spellcheck', 'false');
+        searchInput.setAttribute('inputmode', 'text');
+        searchInput.setAttribute('enterkeyhint', 'search');
+        
+        // iOS standalone mode: Add touch event handling
+        searchInput.addEventListener('touchstart', function(e) {
+          // Prevent default to avoid iOS issues
+          e.preventDefault();
+          // Force focus and show keyboard
+          this.focus();
+          // Small delay to ensure focus is set
+          setTimeout(() => {
+            this.click();
+          }, 100);
+        }, { passive: false });
+        
+        // iOS standalone mode: Force keyboard on focus
+        searchInput.addEventListener('focus', function() {
+          // Force iOS to show keyboard in standalone mode
+          this.click();
+          this.select();
+        });
+        
+        // iOS standalone mode: Show fallback search button if input fails
+        const standaloneSearchBtn = document.getElementById('standalone-search-btn');
+        if (standaloneSearchBtn) {
+          standaloneSearchBtn.style.display = 'flex';
+          
+          // Fallback search functionality for standalone mode
+          standaloneSearchBtn.addEventListener('click', function() {
+            // Try to focus the input first
+            searchInput.focus();
+            
+            // If that doesn't work, show a prompt
+            setTimeout(() => {
+              if (document.activeElement !== searchInput) {
+                // Input focus failed, show alternative search
+                showStandaloneSearchPrompt();
+              }
+            }, 200);
+          });
+        }
+        
+        console.log('iOS standalone mode detected - search input enhanced');
+      }
     } else {
       document.body.classList.add('browser-mode');
+    }
+    
+    // Function to show alternative search for standalone mode
+    function showStandaloneSearchPrompt() {
+      // Create a modal or prompt for search in standalone mode
+      const prompt = document.createElement('div');
+      prompt.className = 'standalone-search-prompt';
+      prompt.innerHTML = `
+        <div class="prompt-content">
+          <h3>Search Location</h3>
+          <p>Enter a city name to search:</p>
+          <input type="text" id="prompt-search-input" placeholder="e.g., London, Tokyo" />
+          <div class="prompt-buttons">
+            <button id="prompt-search-btn">Search</button>
+            <button id="prompt-cancel-btn">Cancel</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(prompt);
+      
+      // Handle search in prompt
+      const promptInput = document.getElementById('prompt-search-input');
+      const searchBtn = document.getElementById('prompt-search-btn');
+      const cancelBtn = document.getElementById('prompt-cancel-btn');
+      
+      promptInput.focus();
+      
+      searchBtn.addEventListener('click', () => {
+        const query = promptInput.value.trim();
+        if (query) {
+          // Trigger search with the query
+          triggerSearch(query);
+          document.body.removeChild(prompt);
+        }
+      });
+      
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(prompt);
+      });
+      
+      // Handle Enter key
+      promptInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          searchBtn.click();
+        }
+      });
+    }
+    
+    // Function to trigger search (this will be called from the main script)
+    function triggerSearch(query) {
+      // Dispatch a custom event that the main script can listen to
+      const searchEvent = new CustomEvent('standaloneSearch', { detail: { query } });
+      window.dispatchEvent(searchEvent);
     }
   </script>
 </body>

@@ -128,6 +128,147 @@ body.search-active {
   transition: all 0.6s ease-out;
 }
 
+/* iOS Standalone Mode: Force input field to be interactive */
+.shortcut-mode .header input {
+  /* Ensure input is properly interactive in standalone mode */
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  /* Force iOS to recognize this as an input field */
+  -webkit-appearance: textfield;
+  /* Ensure proper touch handling */
+  touch-action: manipulation;
+  /* Prevent iOS from zooming */
+  font-size: 16px;
+}
+
+/* iOS Standalone Mode: Enhanced focus states */
+.shortcut-mode .header input:focus {
+  /* Force keyboard to appear in standalone mode */
+  -webkit-user-select: text;
+  /* Ensure input is properly focused */
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* iOS Standalone Mode: Touch feedback */
+.shortcut-mode .header input:active {
+  /* Provide visual feedback for touch */
+  background: var(--surface-active);
+  transform: scale(0.98);
+  transition: all 0.1s ease-out;
+}
+
+/* Standalone search button (hidden by default, shown in standalone mode) */
+.standalone-search-btn {
+  display: none;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.standalone-search-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.standalone-search-btn:active {
+  transform: scale(0.95);
+}
+
+/* Standalone search prompt modal */
+.standalone-search-prompt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.prompt-content {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.prompt-content h3 {
+  margin: 0 0 16px 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.prompt-content p {
+  margin: 0 0 16px 0;
+  color: var(--secondary);
+  font-size: 14px;
+}
+
+.prompt-content input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  background: var(--background);
+  color: var(--text);
+}
+
+.prompt-content input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.prompt-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.prompt-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#prompt-search-btn {
+  background: var(--primary);
+  color: white;
+}
+
+#prompt-search-btn:hover {
+  background: var(--primary-hover);
+}
+
+#prompt-cancel-btn {
+  background: var(--surface-active);
+  color: var(--text);
+}
+
+#prompt-cancel-btn:hover {
+  background: var(--border);
+}
+
 .header input::placeholder {
   color: var(--secondary);
 }
