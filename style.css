@@ -10,6 +10,8 @@ html {
   --background: #FFFFFF;
   --surface: rgba(31, 31, 33, 0.05);
   --surface-active: rgba(31, 31, 33, 0.25);
+  --brand: #007AFF;
+  --negative: #FF3B30;
 }
 
 /* Dark mode - automatically follows device preference */
@@ -20,6 +22,8 @@ html {
     --background: #000000;
     --surface: rgba(255, 255, 255, 0.1);
     --surface-active: rgba(255, 255, 255, 0.25);
+    --brand: #148EF5;
+    --negative: #FF3B30;
   }
 }
 
@@ -212,7 +216,7 @@ body.search-active {
 
 .search-result:active {
   background: var(--surface-active);
-  border-radius: 24px;
+  border-radius: 32px;
   padding: 16px 20px;
 }
 
@@ -369,7 +373,7 @@ h1 {
 
 .precipitation-icon .material-symbols-sharp {
   font-size: 20px;
-  color: var(--primary);
+  color: var(--brand);
 }
 
 .precipitation-label {
@@ -402,7 +406,7 @@ h1 {
 
 .hazard-icon .material-symbols-sharp {
   font-size: 20px;
-  color: var(--primary);
+  color: var(--negative);
 }
 
 .hazard-label {
