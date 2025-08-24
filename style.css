@@ -12,6 +12,7 @@ html {
   --surface-active: rgba(31, 31, 33, 0.25);
   --brand: #007AFF;
   --negative: #FF3B30;
+  --negative-cold: #B73BFF;
 }
 
 /* Dark mode - automatically follows device preference */
@@ -24,6 +25,7 @@ html {
     --surface-active: rgba(255, 255, 255, 0.25);
     --brand: #148EF5;
     --negative: #FF594E;
+    --negative-cold: #CE52FC;
   }
 }
 
@@ -381,6 +383,7 @@ h1 {
   font-size: 16px;
   line-height: 20px;
   font-weight: 500;
+  color: var(--brand);
 }
 
 /* Hazard warning styling */
@@ -402,18 +405,47 @@ h1 {
 
 .hazard-icon {
   font-size: 16px;
-  line-height: 1;
+  line-height: 20px; /* Match the container height for proper centering */
 }
 
 .hazard-icon .material-symbols-sharp {
   font-size: 20px;
+  line-height: 20px; /* Ensure icon line-height matches container */
   color: var(--negative);
+  display: flex; /* Use flexbox for better icon centering */
+  align-items: center;
 }
 
 .hazard-label {
   font-size: 16px;
   line-height: 20px;
   font-weight: 500;
+  color: var(--primary);
+}
+
+/* Hazard color variations */
+.hazard-hot .material-symbols-sharp {
+  color: var(--negative);
+}
+
+.hazard-cold .material-symbols-sharp {
+  color: var(--negative-cold);
+}
+
+.hazard-wind .material-symbols-sharp {
+  color: var(--primary);
+}
+
+/* Hazard label color variations */
+.hazard-label.hazard-hot {
+  color: var(--negative);
+}
+
+.hazard-label.hazard-cold {
+  color: var(--negative-cold);
+}
+
+.hazard-label.hazard-wind {
   color: var(--primary);
 }
 

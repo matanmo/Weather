@@ -625,38 +625,44 @@ function getHazardDisplay(hazardType) {
     return { icon: '', label: '', show: false };
   }
   
-  let icon, label;
+  let icon, label, colorClass;
   
   switch (hazardType) {
     case 'Fire Risk':
       icon = '<span class="material-symbols-sharp">mode_heat</span>';
       label = 'Fire Risk';
+      colorClass = 'hazard-hot';
       break;
     case 'Extreme Heat':
       icon = '<span class="material-symbols-sharp">heat</span>';
       label = 'Extreme Heat';
+      colorClass = 'hazard-hot';
       break;
     case 'Heavy Rain':
       icon = '<span class="material-symbols-sharp">flood</span>';
       label = 'Heavy Rain';
+      colorClass = 'hazard-cold';
       break;
     case 'Snow/Ice':
       icon = '<span class="material-symbols-sharp">severe_cold</span>';
       label = 'Snow/Ice';
+      colorClass = 'hazard-cold';
       break;
     case 'Extreme Cold':
       icon = '<span class="material-symbols-sharp">severe_cold</span>';
       label = 'Extreme Cold';
+      colorClass = 'hazard-cold';
       break;
     case 'Strong Winds':
       icon = '<span class="material-symbols-sharp">air</span>';
       label = 'Strong Winds';
+      colorClass = 'hazard-wind';
       break;
     default:
       return { icon: '', label: '', show: false };
   }
   
-  return { icon, label, show: true };
+  return { icon, label, show: true, colorClass };
 }
 
 // Show loading progress
@@ -1254,6 +1260,9 @@ function displayResults(comparisons) {
     const hazardIcon = hazardToday.querySelector('.hazard-icon');
     const hazardLabel = hazardToday.querySelector('.hazard-label');
     
+    // Apply color class based on hazard type
+    hazardIcon.className = `hazard-icon ${comparisons.todayHazard.colorClass}`;
+    hazardLabel.className = `hazard-label ${comparisons.todayHazard.colorClass}`;
     hazardIcon.innerHTML = comparisons.todayHazard.icon;
     hazardLabel.textContent = comparisons.todayHazard.label;
     hazardToday.style.display = 'flex';
@@ -1305,6 +1314,8 @@ function displayResults(comparisons) {
     
     if (comparisons.weekHazards && comparisons.weekHazards[index] && comparisons.weekHazards[index].show) {
       // Hazard takes priority - show hazard, hide precipitation
+      // Apply color class based on hazard type
+      hazardIcon.className = `hazard-icon ${comparisons.weekHazards[index].colorClass}`;
       hazardIcon.innerHTML = comparisons.weekHazards[index].icon;
       hazardWeek.style.display = 'flex';
       precipitationWeek.style.display = 'none';
