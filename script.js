@@ -16,6 +16,7 @@ const error = document.getElementById('error');
 let currentLocationName = "Tel Aviv, Israel"; // default location name with country
 let ipBasedLocationName = "Tel Aviv, Israel"; // IP-based location name (never changes)
 let fuse; // Fuse.js instance for fuzzy searching
+let isDismissing = false; // Flag to prevent focus events during dismiss
 
 // Load saved location from localStorage on startup
 function loadSavedLocation() {
@@ -99,6 +100,12 @@ async function fetchLocations(query) {
 
 // Render search results in the existing container
 function renderResults(results) {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    console.log('=== RENDERING SKIPPED - DISMISSING ==='); // Debug log
+    return;
+  }
+  
   console.log('=== RENDERING RESULTS ==='); // Debug log
   
   // Clear existing results
@@ -236,12 +243,19 @@ function debounce(func, wait) {
 
 // Handle search input with debouncing
 const debouncedSearch = debounce(async (query) => {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    console.log('=== SEARCH SKIPPED - DISMISSING ==='); // Debug log
+    return;
+  }
+  
   console.log('=== SEARCH TRIGGERED ==='); // Debug log
   console.log('Query:', query); // Debug log
   
   if (!query.trim()) {
-    console.log('Empty query, clearing results'); // Debug log
-    searchResults.innerHTML = "";
+    console.log('Empty query, showing only current location'); // Debug log
+    // Show only current location when query is empty
+    showCurrentLocationResult();
     return;
   }
   
@@ -265,6 +279,11 @@ const debouncedSearch = debounce(async (query) => {
 
 // Search input event listeners
 searchInput.addEventListener('input', (e) => {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    return;
+  }
+  
   console.log('=== SEARCH INPUT EVENT ==='); // Debug log
   console.log('Search input value:', e.target.value); // Debug log
   const query = e.target.value.trim();
@@ -274,12 +293,22 @@ searchInput.addEventListener('input', (e) => {
 
 // Test if search input is working
 searchInput.addEventListener('keydown', (e) => {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    return;
+  }
+  
   console.log('=== KEYDOWN EVENT ==='); // Debug log
   console.log('Key pressed:', e.key); // Debug log
 });
 
 // On focus - clear input for typing and hide weather data
 searchInput.addEventListener('focus', () => {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    return;
+  }
+  
   console.log('=== SEARCH FOCUSED ==='); // Debug log
   // Store the current value before clearing
   searchInput.dataset.previousValue = searchInput.value;
@@ -295,6 +324,11 @@ searchInput.addEventListener('focus', () => {
 
 // On blur - restore previous value and show weather data
 searchInput.addEventListener('blur', () => {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    return;
+  }
+  
   console.log('=== SEARCH BLURRED ==='); // Debug log
   setTimeout(() => {
     // Only restore if no result was clicked and input is empty
@@ -302,6 +336,7 @@ searchInput.addEventListener('blur', () => {
       console.log('No result clicked and input empty, restoring previous value'); // Debug log
       searchInput.value = searchInput.dataset.previousValue || currentLocationName;
       searchResults.innerHTML = "";
+      searchResults.classList.remove('has-results'); // Hide results container
     }
     // Show weather data with opacity transition
     weatherData.classList.remove('search-hidden');
@@ -312,13 +347,35 @@ searchInput.addEventListener('blur', () => {
 
 // Dismiss button functionality
 dismissBtn.addEventListener('click', () => {
+  // Set flag to prevent focus events during dismiss
+  isDismissing = true;
+  
+  // Clear search results and hide the container
   searchResults.innerHTML = "";
+  searchResults.classList.remove('has-results');
+  
+  // Reset search input to current location name
+  searchInput.value = currentLocationName;
+  
+  // Update the stored previous value for future focus/blur cycles
+  searchInput.dataset.previousValue = currentLocationName;
+  
+  // Resize input to fit new content
+  resizeSearchInput();
+  
+  // Show weather data
+  weatherData.classList.remove('search-hidden');
+  
+  // Hide dismiss button
+  dismissBtn.classList.remove('search-visible');
+  
+  // Remove focus from search input
   searchInput.blur();
   
-  // If input is empty after dismiss, restore current location name
-  if (!searchInput.value.trim()) {
-    searchInput.value = currentLocationName;
-  }
+  // Reset flag after a short delay
+  setTimeout(() => {
+    isDismissing = false;
+  }, 300);
 });
 
 
@@ -357,6 +414,12 @@ function resizeSearchInput() {
 
 // Function to show current location result
 function showCurrentLocationResult() {
+  // Skip if we're in the middle of dismissing
+  if (isDismissing) {
+    console.log('=== SHOW CURRENT LOCATION SKIPPED - DISMISSING ==='); // Debug log
+    return;
+  }
+  
   // Clear any existing results
   searchResults.innerHTML = "";
   

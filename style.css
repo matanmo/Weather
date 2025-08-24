@@ -119,6 +119,11 @@ body.search-active {
   width: fit-content; /* Fit content width */
   max-width: 200px; /* Max width limit */
   text-overflow: ellipsis;
+  /* Hide the blue X button in Chrome on Mac */
+  &::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 }
 
 /* Focus state - expand to full width */

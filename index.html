@@ -150,9 +150,9 @@
       // Simple fix: Force keyboard to appear in standalone mode
       const searchInput = document.getElementById('search-input');
       if (searchInput) {
-        // iOS standalone mode: Force keyboard on touch
-        searchInput.addEventListener('touchstart', function(e) {
-          // Force focus and keyboard
+        // iOS standalone mode: Force keyboard on touch release (like browser behavior)
+        searchInput.addEventListener('touchend', function(e) {
+          // Force focus and keyboard on touch release
           this.focus();
           this.click();
         });
