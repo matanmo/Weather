@@ -117,7 +117,7 @@ body.search-active {
   background: var(--surface);
   transition: all 0.3s ease-out;
   width: fit-content; /* Fit content width */
-  max-width: 200px; /* Max width limit */
+  max-width: 240px; /* Max width limit */
   text-overflow: ellipsis;
   /* Hide the blue X button in Chrome on Mac */
   &::-webkit-search-cancel-button {
