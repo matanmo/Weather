@@ -123,6 +123,11 @@ body.search-active {
   width: fit-content; /* Fit content width */
   max-width: 240px; /* Max width limit */
   text-overflow: ellipsis;
+  /* iOS-specific properties for better keyboard behavior */
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   /* Hide the blue X button in Chrome on Mac */
   &::-webkit-search-cancel-button {
     -webkit-appearance: none;
@@ -420,5 +425,32 @@ h1 {
 @media (prefers-color-scheme: dark) {
   .logo {
     background-image: url("logo_dark.png");
+  }
+}
+
+/* iOS-specific enhancements for search input */
+.shortcut-mode .header input {
+  /* Ensure proper iOS keyboard behavior in standalone mode */
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: manipulation !important;
+  /* Prevent iOS zoom on focus */
+  font-size: 16px !important;
+}
+
+/* Prevent automatic focus on iOS */
+.header input {
+  /* Prevent iOS from automatically focusing inputs */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* Additional iOS touch improvements */
+@media (max-width: 768px) {
+  .header input {
+    /* Ensure minimum touch target size for iOS */
+    min-height: 44px;
+    /* Prevent iOS zoom */
+    font-size: 16px;
   }
 }

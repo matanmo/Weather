@@ -67,6 +67,18 @@ if (!searchInput || !searchResults || !dismissBtn) {
   // Don't return - just log the error and continue
 }
 
+// iOS-specific touch handling for search input
+if (searchInput && isMobile) {
+  // Enhanced touch handling for iOS devices
+  searchInput.addEventListener('touchstart', function(e) {
+    // Ensure input is ready for iOS interaction
+    this.style.webkitUserSelect = 'text';
+    this.style.webkitTouchCallout = 'default';
+  });
+  
+  console.log('iOS touch handling enhanced for search input');
+}
+
 // Setup Fuse.js for fuzzy searching with typo tolerance
 function setupFuse(data) {
   fuse = new Fuse(data, {
@@ -1356,6 +1368,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Resize input to fit content
     resizeSearchInput();
+    
+    // Explicitly blur the input to prevent automatic focus on iOS
+    searchInput.blur();
+    console.log('Search input blurred to prevent auto-focus');
   } else {
     console.log('Search input not found yet'); // Debug log
   }
