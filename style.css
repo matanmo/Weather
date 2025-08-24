@@ -91,11 +91,6 @@ body.search-active {
   top: 32px;
 } */
 
-.shortcut-mode .logo {
-  /* Add extra space for status bar in shortcut mode */
-  /* top: 96px; */
-}
-
 .search-container {
   display: flex;
   align-items: center;
@@ -125,6 +120,7 @@ body.search-active {
   text-overflow: ellipsis;
   /* iOS-specific properties for better keyboard behavior */
   -webkit-user-select: text;
+  user-select: text;
   -webkit-touch-callout: default;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -432,6 +428,7 @@ h1 {
 .shortcut-mode .header input {
   /* Ensure proper iOS keyboard behavior in standalone mode */
   -webkit-user-select: text !important;
+  user-select: text !important;
   -webkit-touch-callout: default !important;
   touch-action: manipulation !important;
   /* Prevent iOS zoom on focus */
