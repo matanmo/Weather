@@ -176,13 +176,25 @@ function renderResults(results) {
   
   console.log('Creating', results.length, 'additional result items'); // Debug log
   
-  // Create and append each result
-  results.forEach((place, index) => {
-    console.log(`Creating result ${index}:`, place.name); // Debug log
-    
-    const resultItem = document.createElement("div");
-    resultItem.classList.add("search-result");
-    resultItem.textContent = `${place.name}, ${place.country}`;
+      // Create and append each result
+    results.forEach((place, index) => {
+      console.log(`Creating result ${index}:`, place.name); // Debug log
+      
+      const resultItem = document.createElement("div");
+      resultItem.classList.add("search-result");
+      
+      // Build full location name with all available details
+      let fullLocationName = place.name;
+      
+      // Add state/province if available
+      if (place.admin1 && place.admin1 !== place.name) {
+        fullLocationName += `, ${place.admin1}`;
+      }
+      
+      // Add country
+      fullLocationName += `, ${place.country}`;
+      
+      resultItem.textContent = fullLocationName;
     
     // Simple click handler
     resultItem.onclick = function() {
@@ -190,8 +202,19 @@ function renderResults(results) {
       console.log('Selected:', place.name); // Debug log
       console.log('Place data:', place); // Debug log
       
-      // Update location with full name (city + country)
-      currentLocationName = `${place.name}, ${place.country}`;
+      // Build full location name with all available details for storage
+      let fullLocationName = place.name;
+      
+      // Add state/province if available
+      if (place.admin1 && place.admin1 !== place.name) {
+        fullLocationName += `, ${place.admin1}`;
+      }
+      
+      // Add country
+      fullLocationName += `, ${place.country}`;
+      
+      // Update location with full name
+      currentLocationName = fullLocationName;
       LOCATION = {
         latitude: place.latitude,
         longitude: place.longitude
