@@ -13,8 +13,8 @@ const weatherData = document.querySelector('.weather-data');
 const error = document.getElementById('error');
 
 // ---- LOCATION SEARCH FUNCTIONALITY ----
-let currentLocationName = "Tel Aviv, Israel"; // default location name with country
-let ipBasedLocationName = "Tel Aviv, Israel"; // IP-based location name (never changes)
+let currentLocationName = "Loading..."; // Placeholder until location is detected
+let ipBasedLocationName = "Loading..."; // Placeholder until location is detected
 let fuse; // Fuse.js instance for fuzzy searching
 let isDismissing = false; // Flag to prevent focus events during dismiss
 
@@ -29,6 +29,11 @@ function loadSavedLocation() {
         latitude: locationData.latitude,
         longitude: locationData.longitude
       };
+      // Update search input if available
+      if (searchInput) {
+        searchInput.value = currentLocationName;
+        resizeSearchInput();
+      }
       console.log('Loaded saved location:', currentLocationName);
       return true; // Indicates we have a saved location
     } catch (err) {
@@ -778,40 +783,106 @@ async function initWeatherApp() {
 // Get approximate location from IP address
 async function getLocationFromIP() {
   try {
-    console.log('Fetching location from ipapi.co...'); // Debug log
+    console.log('Fetching location from IP detection services...'); // Debug log
     console.log('User agent:', navigator.userAgent); // Debug log
     console.log('Is mobile:', isMobile); // Debug log
     
-    const response = await fetchWithTimeout('https://ipapi.co/json/', {}, 15000);
+    // Try multiple IP detection services for better reliability
+    const ipServices = [
+      'https://ipapi.co/json/',
+      'https://ipinfo.io/json',
+      'https://api.ipify.org?format=json',
+      'https://httpbin.org/ip'
+    ];
     
-    if (!response.ok) {
-      throw new Error(`IP API failed: ${response.status}`);
+    let locationData = null;
+    let lastError = null;
+    
+    // Try each service until one works
+    for (const serviceUrl of ipServices) {
+      try {
+        console.log(`Trying IP service: ${serviceUrl}`); // Debug log
+        
+        const response = await fetchWithTimeout(serviceUrl, {}, 8000);
+        
+        if (!response.ok) {
+          throw new Error(`Service failed: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`Service ${serviceUrl} response:`, data); // Debug log
+        
+        // Parse different response formats
+        if (data.latitude && data.longitude) {
+          // ipapi.co format
+          locationData = {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            city: data.city,
+            country: data.country
+          };
+          break;
+        } else if (data.loc) {
+          // ipinfo.io format - loc is "lat,lng"
+          const [lat, lng] = data.loc.split(',').map(Number);
+          if (lat && lng) {
+            locationData = {
+              latitude: lat,
+              longitude: lng,
+              city: data.city,
+              country: data.country
+            };
+            break;
+          }
+        } else if (data.ip) {
+          // ipify.org format - just IP, skip this one
+          continue;
+        }
+        
+      } catch (err) {
+        console.log(`Service ${serviceUrl} failed:`, err.message); // Debug log
+        lastError = err;
+        continue; // Try next service
+      }
     }
     
-    const data = await response.json();
-    console.log('IP API response:', data); // Debug log
-    
-    LOCATION = {
-      latitude: data.latitude,
-      longitude: data.longitude
-    };
-    
-    // Update current location name when detected from IP
-    if (data.city) {
-      const ipLocationName = `${data.city}, ${data.country}`;
-      currentLocationName = ipLocationName;
-      ipBasedLocationName = ipLocationName; // Store IP-based location separately
-      searchInput.value = currentLocationName;
+    if (locationData) {
+      LOCATION = {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      };
+      
+      // Update current location name when detected from IP
+      if (locationData.city) {
+        const ipLocationName = `${locationData.city}, ${locationData.country}`;
+        currentLocationName = ipLocationName;
+        ipBasedLocationName = ipLocationName; // Store IP-based location separately
+        if (searchInput) {
+          searchInput.value = currentLocationName;
+          // Resize input to fit the new location name
+          resizeSearchInput();
+        }
+      }
+      
+      console.log('Location detected:', locationData.city, locationData.country);
+    } else {
+      throw new Error('All IP detection services failed');
     }
     
-    console.log('Location detected:', data.city, data.country);
   } catch (err) {
     console.error('Failed to get location from IP, using default:', err);
-    // Fallback to Tel Aviv if IP location fails
+    // Fallback to default coordinates if IP location fails
     LOCATION = {
       latitude: 32.08,
       longitude: 34.78
     };
+    // Set generic fallback names
+    currentLocationName = "Location unavailable";
+    ipBasedLocationName = "Location unavailable";
+    if (searchInput) {
+      searchInput.value = currentLocationName;
+      resizeSearchInput();
+    }
     console.log('Using fallback location:', LOCATION);
   }
 }
