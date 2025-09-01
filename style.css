@@ -199,18 +199,24 @@ body.search-active {
   /* Fixed height to prevent page scrolling */
   height: 400px; /* Fixed height that won't cause page scroll */
   overflow-y: auto; /* Allow scrolling within results */
-  /* Hidden by default */
-  display: none;
+  /* Hidden by default with transitions */
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: all 0.25s ease-out;
 }
 
 /* Show search results when they have content */
 .search-results.has-results {
-  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .search-result {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 0px;
   padding: 16px;
   border-radius: 12px;
@@ -221,6 +227,18 @@ body.search-active {
   background: var(--surface-active);
   border-radius: 32px;
   padding: 16px 20px;
+}
+
+/* Location icon styling for current location result */
+.search-result .location-icon {
+  color: var(--primary);
+  font-size: 20px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.search-result .location-text {
+  color: var(--primary);
 }
 
 

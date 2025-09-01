@@ -15,6 +15,7 @@ const error = document.getElementById('error');
 // ---- LOCATION SEARCH FUNCTIONALITY ----
 let currentLocationName = "Loading..."; // Placeholder until location is detected
 let ipBasedLocationName = "Loading..."; // Placeholder until location is detected
+let ipLocationDetected = false; // Track if IP location has been successfully detected
 let fuse; // Fuse.js instance for fuzzy searching
 let isDismissing = false; // Flag to prevent focus events during dismiss
 
@@ -132,7 +133,30 @@ function renderResults(results) {
   // Always add current location result at the top (based on IP, not last selection)
   const currentLocationResult = document.createElement("div");
   currentLocationResult.classList.add("search-result");
-  currentLocationResult.textContent = ipBasedLocationName;
+  
+  // First search result should ALWAYS show IP-based location
+  let displayLocationName;
+  if (ipLocationDetected && ipBasedLocationName && ipBasedLocationName !== "Loading...") {
+    // We have a valid IP location - use it
+    displayLocationName = ipBasedLocationName;
+  } else {
+    // IP location not detected yet - show generic placeholder
+    displayLocationName = "Current location";
+  }
+  
+  // Create icon and location name with proper spacing
+  const locationIcon = document.createElement("span");
+  locationIcon.classList.add("material-symbols-sharp", "location-icon");
+  locationIcon.textContent = "near_me";
+  
+  const locationText = document.createElement("span");
+  locationText.classList.add("location-text");
+  locationText.textContent = displayLocationName;
+  
+  // Clear existing content and add icon + text
+  currentLocationResult.innerHTML = "";
+  currentLocationResult.appendChild(locationIcon);
+  currentLocationResult.appendChild(locationText);
   
   // Handle current location selection
   currentLocationResult.onclick = function() {
@@ -164,6 +188,9 @@ function renderResults(results) {
     
     // Reset LOCATION to force fresh IP detection
     LOCATION = null;
+    
+    // Reset IP location detection flag to ensure fresh detection
+    ipLocationDetected = false;
     
     // Refresh weather for current location
     console.log('Refreshing weather for current location...'); // Debug log
@@ -237,27 +264,32 @@ function renderResults(results) {
       searchInput.dataset.previousValue = currentLocationName;
       console.log('Search input now shows:', searchInput.value); // Debug log
       
-      // Clear results
-      searchResults.innerHTML = "";
-      searchResults.classList.remove('has-results'); // Hide container
+      // Start transition to hide results
+      searchResults.classList.remove('has-results'); // Start fade out transition
       
-      // Resize input to fit new content
-      resizeSearchInput();
-      
-      // Show weather data
-      weatherData.classList.remove('search-hidden');
-      
-      // Hide dismiss button since search is no longer focused
-      dismissBtn.classList.remove('search-visible');
-      
-      // Refresh weather for new location
-      console.log('About to call initWeatherApp()...'); // Debug log
-      console.log('Current LOCATION before call:', LOCATION); // Debug log
-      console.log('Current currentLocationName before call:', currentLocationName); // Debug log
-      
-      initWeatherApp();
-      
-      console.log('initWeatherApp() called'); // Debug log
+      // Wait for transition to complete before clearing content
+      setTimeout(() => {
+        // Clear results after transition
+        searchResults.innerHTML = "";
+        
+        // Resize input to fit new content
+        resizeSearchInput();
+        
+        // Show weather data
+        weatherData.classList.remove('search-hidden');
+        
+        // Hide dismiss button since search is no longer focused
+        dismissBtn.classList.remove('search-visible');
+        
+        // Refresh weather for new location
+        console.log('About to call initWeatherApp()...'); // Debug log
+        console.log('Current LOCATION before call:', LOCATION); // Debug log
+        console.log('Current currentLocationName before call:', currentLocationName); // Debug log
+        
+        initWeatherApp();
+        
+        console.log('initWeatherApp() called'); // Debug log
+      }, 250); // Wait for CSS transition to complete
     };
     
     // Add to DOM
@@ -295,7 +327,7 @@ const debouncedSearch = debounce(async (query) => {
   if (!query.trim()) {
     console.log('Empty query, showing only current location'); // Debug log
     // Show only current location when query is empty
-    showCurrentLocationResult();
+    await showCurrentLocationResult();
     return;
   }
   
@@ -343,7 +375,7 @@ searchInput.addEventListener('keydown', (e) => {
 });
 
 // On focus - clear input for typing and hide weather data
-searchInput.addEventListener('focus', () => {
+searchInput.addEventListener('focus', async () => {
   // Skip if we're in the middle of dismissing
   if (isDismissing) {
     return;
@@ -359,7 +391,7 @@ searchInput.addEventListener('focus', () => {
   dismissBtn.classList.add('search-visible');
   
   // Show current location result immediately
-  showCurrentLocationResult();
+  await showCurrentLocationResult();
 });
 
 // On blur - restore previous value and show weather data
@@ -375,8 +407,14 @@ searchInput.addEventListener('blur', () => {
     if (searchResults.children.length > 0 && !searchInput.value.trim()) {
       console.log('No result clicked and input empty, restoring previous value'); // Debug log
       searchInput.value = searchInput.dataset.previousValue || currentLocationName;
-      searchResults.innerHTML = "";
-      searchResults.classList.remove('has-results'); // Hide results container
+      
+      // Start transition to hide search results
+      searchResults.classList.remove('has-results'); // Start fade out transition
+      
+      // Wait for transition to complete before clearing content
+      setTimeout(() => {
+        searchResults.innerHTML = "";
+      }, 250); // Wait for CSS transition to complete
     }
     // Show weather data with opacity transition
     weatherData.classList.remove('search-hidden');
@@ -390,9 +428,8 @@ dismissBtn.addEventListener('click', () => {
   // Set flag to prevent focus events during dismiss
   isDismissing = true;
   
-  // Clear search results and hide the container
-  searchResults.innerHTML = "";
-  searchResults.classList.remove('has-results');
+  // Start transition to hide search results
+  searchResults.classList.remove('has-results'); // Start fade out transition
   
   // Reset search input to current location name
   searchInput.value = currentLocationName;
@@ -400,22 +437,33 @@ dismissBtn.addEventListener('click', () => {
   // Update the stored previous value for future focus/blur cycles
   searchInput.dataset.previousValue = currentLocationName;
   
-  // Resize input to fit new content
-  resizeSearchInput();
-  
   // Show weather data
   weatherData.classList.remove('search-hidden');
-  
-  // Hide dismiss button
-  dismissBtn.classList.remove('search-visible');
   
   // Remove focus from search input
   searchInput.blur();
   
-  // Reset flag after a short delay
+  // Wait for search results transition to complete before clearing content
+  setTimeout(() => {
+    // Clear search results after transition
+    searchResults.innerHTML = "";
+    
+    // Delay hiding dismiss button to allow transition to complete
+    setTimeout(() => {
+      // Hide dismiss button after transition
+      dismissBtn.classList.remove('search-visible');
+      
+      // Resize input to fit new content after button is hidden
+      setTimeout(() => {
+        resizeSearchInput();
+      }, 50);
+    }, 250); // Wait for CSS transition to complete
+  }, 250); // Wait for search results transition to complete
+  
+  // Reset flag after a longer delay to ensure all animations complete
   setTimeout(() => {
     isDismissing = false;
-  }, 300);
+  }, 650); // Increased delay to account for both transitions
 });
 
 
@@ -453,12 +501,15 @@ function resizeSearchInput() {
 }
 
 // Function to show current location result
-function showCurrentLocationResult() {
+async function showCurrentLocationResult() {
   // Skip if we're in the middle of dismissing
   if (isDismissing) {
     console.log('=== SHOW CURRENT LOCATION SKIPPED - DISMISSING ==='); // Debug log
     return;
   }
+  
+  // Try to refresh IP location if needed
+  await refreshIPLocationIfNeeded();
   
   // Clear any existing results
   searchResults.innerHTML = "";
@@ -466,42 +517,73 @@ function showCurrentLocationResult() {
   // Create current location result
   const currentLocationResult = document.createElement("div");
   currentLocationResult.classList.add("search-result");
-  currentLocationResult.textContent = ipBasedLocationName;
+  
+  // First search result should ALWAYS show IP-based location
+  let displayLocationName;
+  if (ipLocationDetected && ipBasedLocationName && ipBasedLocationName !== "Loading...") {
+    // We have a valid IP location - use it
+    displayLocationName = ipBasedLocationName;
+  } else {
+    // IP location not detected yet - show generic placeholder
+    displayLocationName = "Current location";
+  }
+  
+  // Create icon and location name with proper spacing
+  const locationIcon = document.createElement("span");
+  locationIcon.classList.add("material-symbols-sharp", "location-icon");
+  locationIcon.textContent = "near_me";
+  
+  const locationText = document.createElement("span");
+  locationText.classList.add("location-text");
+  locationText.textContent = displayLocationName;
+  
+  // Clear existing content and add icon + text
+  currentLocationResult.innerHTML = "";
+  currentLocationResult.appendChild(locationIcon);
+  currentLocationResult.appendChild(locationText);
   
   // Handle current location selection
   currentLocationResult.onclick = function() {
     console.log('=== CURRENT LOCATION CLICKED ==='); // Debug log
-    console.log('Returning to IP-based location:', ipBasedLocationName); // Debug log
+    console.log('Returning to IP-based location:', displayLocationName); // Debug log
     
-    // Update search input to show IP-based location name
-    searchInput.value = ipBasedLocationName;
+    // Update search input to show the display location name
+    searchInput.value = displayLocationName;
     // Update the stored previous value for future focus/blur cycles
-    searchInput.dataset.previousValue = ipBasedLocationName;
-    console.log('Search input now shows:', ipBasedLocationName); // Debug log
+    searchInput.dataset.previousValue = displayLocationName;
+    console.log('Search input now shows:', displayLocationName); // Debug log
     
-    // Clear results
-    searchResults.innerHTML = "";
-    searchResults.classList.remove('has-results'); // Hide container
+    // Start transition to hide results
+    searchResults.classList.remove('has-results'); // Start fade out transition
     
-    // Resize input to fit new content
-    resizeSearchInput();
-    
-    // Show weather data
-    weatherData.classList.remove('search-hidden');
-    
-    // Hide dismiss button since search is no longer focused
-    dismissBtn.classList.remove('search-visible');
-    
-    // Clear saved location from localStorage since we're returning to IP location
-    localStorage.removeItem('weatherAppLocation');
-    console.log('Cleared saved location from localStorage');
-    
-    // Reset LOCATION to force fresh IP detection
-    LOCATION = null;
-    
-    // Refresh weather for current location
-    console.log('Refreshing weather for current location...'); // Debug log
-    initWeatherApp();
+    // Wait for transition to complete before clearing content
+    setTimeout(() => {
+      // Clear results after transition
+      searchResults.innerHTML = "";
+      
+      // Resize input to fit new content
+      resizeSearchInput();
+      
+      // Show weather data
+      weatherData.classList.remove('search-hidden');
+      
+      // Hide dismiss button since search is no longer focused
+      dismissBtn.classList.remove('search-visible');
+      
+      // Clear saved location from localStorage since we're returning to IP location
+      localStorage.removeItem('weatherAppLocation');
+      console.log('Cleared saved location from localStorage');
+      
+      // Reset LOCATION to force fresh IP detection
+      LOCATION = null;
+      
+      // Reset IP location detection flag to ensure fresh detection
+      ipLocationDetected = false;
+      
+      // Refresh weather for current location
+      console.log('Refreshing weather for current location...'); // Debug log
+      initWeatherApp();
+    }, 250); // Wait for CSS transition to complete
   };
   
   searchResults.appendChild(currentLocationResult);
@@ -857,6 +939,7 @@ async function getLocationFromIP() {
         const ipLocationName = `${locationData.city}, ${locationData.country}`;
         currentLocationName = ipLocationName;
         ipBasedLocationName = ipLocationName; // Store IP-based location separately
+        ipLocationDetected = true; // Mark that IP location has been successfully detected
         if (searchInput) {
           searchInput.value = currentLocationName;
           // Resize input to fit the new location name
@@ -879,6 +962,7 @@ async function getLocationFromIP() {
     // Set generic fallback names
     currentLocationName = "Location unavailable";
     ipBasedLocationName = "Location unavailable";
+    ipLocationDetected = true; // Mark that we have a fallback location
     if (searchInput) {
       searchInput.value = currentLocationName;
       resizeSearchInput();
@@ -1452,6 +1536,26 @@ function retryApp() {
   
   // Restart the app
   initWeatherApp();
+}
+
+// Function to refresh IP location if needed
+async function refreshIPLocationIfNeeded() {
+  // Always try to refresh IP location if we don't have a valid one
+  if (!ipLocationDetected || !ipBasedLocationName || ipBasedLocationName === "Loading...") {
+    console.log('IP location not detected yet, refreshing...'); // Debug log
+    try {
+      await getLocationFromIP();
+      console.log('IP location refreshed:', ipBasedLocationName); // Debug log
+      
+      // Update search input if it's currently showing the old location
+      if (searchInput && searchInput.value === currentLocationName && currentLocationName !== ipBasedLocationName) {
+        searchInput.value = ipBasedLocationName;
+        resizeSearchInput();
+      }
+    } catch (err) {
+      console.error('Failed to refresh IP location:', err);
+    }
+  }
 }
 
 // Start the app when the page loads
