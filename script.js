@@ -376,19 +376,22 @@ searchInput.addEventListener('keydown', (e) => {
 
 // On focus - clear input for typing and hide weather data
 searchInput.addEventListener('focus', async () => {
-  // Skip if we're in the middle of dismissing
+  console.log('=== SEARCH FOCUSED ==='); // Debug log
+  
+  // Always show dismiss button when focused, regardless of dismissing state
+  dismissBtn.classList.add('search-visible');
+  
+  // If we're in the middle of dismissing, just show the dismiss button and return
   if (isDismissing) {
+    console.log('Focus during dismiss - showing dismiss button only'); // Debug log
     return;
   }
   
-  console.log('=== SEARCH FOCUSED ==='); // Debug log
   // Store the current value before clearing
   searchInput.dataset.previousValue = searchInput.value;
   searchInput.value = "";
   // Hide weather data with opacity transition
   weatherData.classList.add('search-hidden');
-  // Show dismiss button
-  dismissBtn.classList.add('search-visible');
   
   // Show current location result immediately
   await showCurrentLocationResult();
@@ -396,12 +399,15 @@ searchInput.addEventListener('focus', async () => {
 
 // On blur - restore previous value and show weather data
 searchInput.addEventListener('blur', () => {
-  // Skip if we're in the middle of dismissing
+  console.log('=== SEARCH BLURRED ==='); // Debug log
+  
+  // If we're in the middle of dismissing, just hide the dismiss button and return
   if (isDismissing) {
+    console.log('Blur during dismiss - hiding dismiss button only'); // Debug log
+    dismissBtn.classList.remove('search-visible');
     return;
   }
   
-  console.log('=== SEARCH BLURRED ==='); // Debug log
   setTimeout(() => {
     // Only restore if no result was clicked and input is empty
     if (searchResults.children.length > 0 && !searchInput.value.trim()) {
@@ -450,8 +456,10 @@ dismissBtn.addEventListener('click', () => {
     
     // Delay hiding dismiss button to allow transition to complete
     setTimeout(() => {
-      // Hide dismiss button after transition
-      dismissBtn.classList.remove('search-visible');
+      // Only hide dismiss button if search is not focused
+      if (document.activeElement !== searchInput) {
+        dismissBtn.classList.remove('search-visible');
+      }
       
       // Resize input to fit new content after button is hidden
       setTimeout(() => {
